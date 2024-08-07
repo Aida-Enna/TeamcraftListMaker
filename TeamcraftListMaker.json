@@ -1,0 +1,23 @@
+﻿{
+  "Author": "Aida Enna",
+  "Name": "Teamcraft List Maker",
+  "InternalName": "TeamcraftListMaker",
+  "AssemblyVersion": "1.0.0.0",
+  "ApplicableVersion": "any",
+  "Description": "Does... something, I'm sure?",
+  "Punchline": "It's a pretty cool plugin, I think?",
+  "RepoUrl": "hhttps://github.com/Aida-Enna/TeamcraftListMaker",
+  "Tags": [
+    "empty",
+    "aida"
+  ],
+  "CategoryTags": null,
+  "DalamudApiLevel": 10,
+  "LoadPriority": 0,
+  "LastUpdate": 0,
+  "DownloadLinkInstall": null,
+  "DownloadLinkUpdate": null,
+  "DownloadLinkTesting": null,
+  "ImageUrls": null,
+  "IconUrl": ""
+}
