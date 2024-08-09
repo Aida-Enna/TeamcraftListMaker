@@ -1,15 +1,29 @@
 ﻿using Dalamud.Game;
+using Dalamud.Game.Gui.ContextMenu;
+using Dalamud.Game.Text;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using ImGuiNET;
+using Lumina.Data.Parsing.Scd;
+using Lumina.Excel;
+using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Xml;
 using Veda;
+using static FFXIVClientStructs.FFXIV.Common.Component.BGCollision.MeshPCB;
+using static TeamcraftListMaker.ContextMenuService;
 
 namespace TeamcraftListMaker
 {
@@ -20,31 +34,29 @@ namespace TeamcraftListMaker
         [PluginService] public static IDalamudPluginInterface PluginInterface { get; set; }
         [PluginService] public static ICommandManager Commands { get; set; }
         [PluginService] public static ICondition Conditions { get; set; }
-        [PluginService] public static IDataManager Data { get; set; }
+        [PluginService] public static IDataManager DataManager { get; set; }
         [PluginService] public static IFramework Framework { get; set; }
         [PluginService] public static IGameGui GameGui { get; set; }
-        [PluginService] public static ISigScanner SigScanner { get; set; }
         [PluginService] public static IKeyState KeyState { get; set; }
         [PluginService] public static IChatGui Chat { get; set; }
         [PluginService] public static IClientState ClientState { get; set; }
         [PluginService] public static IPartyList PartyList { get; set; }
         [PluginService] public static IPluginLog PluginLog { get; set; }
+        [PluginService] internal static IContextMenu ContextMenu { get; private set; } = null!;
 
         public static Configuration PluginConfig { get; set; }
         private PluginCommandManager<Plugin> CommandManager;
-        private PluginUI ui;
+        public static PluginUI ui;
 
-        public static bool FirstRun = true;
-        public string PreviousWorkingChannel;
-        public bool SuccessfullyJoined;
-        private Random RNGenerator = new Random();
+        private ContextMenuService CMSShit = new ContextMenuService();
+        public static string CraftingListLocation;
 
-        public Plugin(IDalamudPluginInterface pluginInterface, IChatGui chat, IPartyList partyList, ICommandManager commands, ISigScanner sigScanner)
+        public Plugin(IDalamudPluginInterface pluginInterface, IChatGui chat, IPartyList partyList, ICommandManager commands, IDataManager Data)
         {
             PluginInterface = pluginInterface;
             PartyList = partyList;
             Chat = chat;
-            SigScanner = sigScanner;
+            DataManager = Data;
 
             // Get or create a configuration object
             PluginConfig = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
@@ -54,28 +66,206 @@ namespace TeamcraftListMaker
             PluginInterface.UiBuilder.Draw += new System.Action(ui.Draw);
             PluginInterface.UiBuilder.OpenConfigUi += () =>
             {
-                PluginUI ui = this.ui;
+                PluginUI ui = Plugin.ui;
                 ui.IsVisible = !ui.IsVisible;
             };
 
+            ContextMenu.OnMenuOpened += OnContextMenuOpened;
+
+            CraftingListLocation = Path.Combine(PluginInterface.AssemblyLocation.DirectoryName, "craftinglist.txt");
+
             // Load all of our commands
             CommandManager = new PluginCommandManager<Plugin>(this, commands);
-
-            Functions.GetChatSignatures(sigScanner);
         }
 
-        [Command("/emptyconfig")]
-        [HelpMessage("Shows TeamcraftListMaker configuration options")]
-        public void ShowTwitchOptions(string command, string args)
+        private void OnContextMenuOpened(IMenuOpenedArgs args)
         {
-            ui.IsVisible = !ui.IsVisible;
+            try
+            {
+                uint? itemId;
+                itemId = CMSShit.GetGameObjectItemId(args);
+                itemId %= 500000;
+                //Chat.Print($"{itemId}");
+
+                if (itemId != null)
+                {
+                    var menuItem = new MenuItem();
+                    menuItem.Name = "Teamcraft";
+                    menuItem.Prefix = SeIconChar.HighQuality;
+                    menuItem.PrefixColor = 31;
+                    menuItem.IsSubmenu = true;
+                    menuItem.OnClicked += clickedArgs => PopulateCraftingListOptions(clickedArgs, itemId);
+                    args.AddMenuItem(menuItem);
+                }
+            }
+            catch (Exception ex)
+            {
+                Chat.Print("An error has occured - " + ex.ToString());
+            }
         }
 
-        [Command("/emptycommand")]
-        [HelpMessage("Does stuff")]
-        public unsafe void RollRandomClass(string command, string args)
+        private void PopulateCraftingListOptions(IMenuItemClickedArgs clickedArgs, uint? ItemID = null)
         {
-            
+            try
+            {
+                if (!File.Exists(CraftingListLocation))
+                {
+                    File.WriteAllText(CraftingListLocation, "");
+                }
+                var menuItems = new List<MenuItem>();
+                var CraftingListCount = File.ReadLines(CraftingListLocation).Where(x => x.IsNullOrWhitespace() == false).Count();
+                var newButton = new MenuItem();
+                if (CheckListForItem(ItemID))
+                {
+                    newButton = new MenuItem();
+                    newButton.Name = "Remove from List";
+                    newButton.Prefix = SeIconChar.QuestRepeatable;
+                    newButton.PrefixColor = 25;
+                    newButton.OnClicked += args => RemoveItem(ItemID);
+                }
+                else
+                {
+                    newButton.Name = "Add to List";
+                    newButton.IsSubmenu = true;
+                    newButton.Prefix = SeIconChar.BoxedPlus;
+                    newButton.PrefixColor = 45;
+                    newButton.OnClicked += args => AddItemMenu(args, ItemID);
+                }
+                menuItems.Add(newButton);
+                if (CraftingListCount > 0)
+                {
+                    var ExportItemListButton = new MenuItem();
+                    if (CraftingListCount == 1)
+                    {
+                        ExportItemListButton.Name = "Export List (" + CraftingListCount + " item)";
+                    }
+                    else
+                    {
+                        ExportItemListButton.Name = "Export List (" + CraftingListCount + " items)";
+                    }
+                    ExportItemListButton.Prefix = SeIconChar.ArrowRight;
+                    ExportItemListButton.PrefixColor = 37;
+                    ExportItemListButton.OnClicked += args => ExportItemList();
+                    menuItems.Add(ExportItemListButton);
+
+                    var ClearItemListButton = new MenuItem();
+                    if (CraftingListCount == 1)
+                    {
+                        ClearItemListButton.Name = "Clear List (" + CraftingListCount + " item)";
+                    }
+                    else
+                    {
+                        ClearItemListButton.Name = "Clear List (" + CraftingListCount + " items)";
+                    }
+                    ClearItemListButton.Prefix = SeIconChar.Cross;
+                    ClearItemListButton.PrefixColor = 17;
+                    ClearItemListButton.OnClicked += args => ClearItemList();
+                    menuItems.Add(ClearItemListButton);
+                }
+                clickedArgs.OpenSubmenu(menuItems);
+            }
+            catch (Exception ex)
+            {
+                Chat.Print("An error has occured - " + ex.ToString());
+            }
+        }
+
+        private void AddItemMenu(IMenuItemClickedArgs clickedArgs, uint? itemId = null)
+        {
+            var menuItems = new List<MenuItem>();
+            var newButton = new MenuItem();
+            newButton.Name = "1";
+            newButton.OnClicked += args => AddItem(itemId, 1);
+            menuItems.Add(newButton);
+
+            newButton = new MenuItem();
+            newButton.Name = "Specify amount";
+            newButton.OnClicked += SpecifyAmountArgs => SpecifyAmountPopup(SpecifyAmountArgs, itemId);
+            menuItems.Add(newButton);
+            clickedArgs.OpenSubmenu(menuItems);
+        }
+
+        public static bool CheckListForItem(uint? ItemID)
+        {
+            using (StreamReader sr = File.OpenText(CraftingListLocation))
+            {
+                string s = String.Empty;
+                while (!String.IsNullOrWhiteSpace(s = sr.ReadLine()))
+                {
+                    if (s.Split(',')[0] == ItemID.ToString())
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
+        public static unsafe void SpecifyAmountPopup(IMenuItemClickedArgs clickedArgs, uint? itemId = null)
+        {
+            try
+            {
+                ui.SelectItemID = itemId;
+                var ContextMenuPtr = GameGui.GetAddonByName("ContextMenu", 1);
+                var addonContextMenu = (AddonContextMenu*)ContextMenuPtr;
+                if (!Plugin.PluginConfig.DoNotResetAmount) { ui.AmountToAdd = 1; }
+                ui.SelectAmountX = addonContextMenu->X;
+                ui.SelectAmountY = addonContextMenu->Y;
+                //Chat.Print(ui.SelectAmountX.ToString());
+                //Chat.Print(ui.SelectAmountY.ToString());
+                ui.IsVisible = true;
+            }
+            catch (Exception ex)
+            {
+                Chat.Print("An error has occured - " + ex.ToString());
+            }
+        }
+
+        public static void ExportItemList()
+        {
+            string StringBeforeEncode = "";
+            using (StreamReader sr = File.OpenText(CraftingListLocation))
+            {
+                string s = String.Empty;
+                while ((s = sr.ReadLine()) != null)
+                {
+                    if (!String.IsNullOrWhiteSpace(s)) { StringBeforeEncode += s; }
+                }
+            }
+            StringBeforeEncode = StringBeforeEncode.Remove(StringBeforeEncode.Length - 1, 1).Trim();
+            //Chat.Print("String before encoding: \"" + StringBeforeEncode + "\"");
+            string WebsiteURL = "https://ffxivteamcraft.com/import/" + System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(StringBeforeEncode));
+            Functions.OpenWebsite(WebsiteURL);
+            Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "List exported to " + WebsiteURL, ColorType.Teamcraft));
+        }
+
+        public static void ClearItemList()
+        {
+            File.WriteAllText(CraftingListLocation, "");
+            Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "List cleared!", ColorType.Teamcraft));
+        }
+
+        public static void AddItem(uint? ItemID, int Quantity)
+        {
+            File.AppendAllText(CraftingListLocation, ItemID + ",null," + Quantity + ";" + Environment.NewLine);
+            ExcelSheet<Item> ItemSheet = DataManager.GetExcelSheet<Item>()!;
+            var Item = ItemSheet.GetRow((uint)ItemID);
+            Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Added " + Quantity + " " + Item.Name + " to the list!", ColorType.Teamcraft));
+            //if (Quantity > 1)
+            //{
+            //    Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Added " + Quantity + " " + Item.Name + "s to the list!", ColorType.Teamcraft));
+            //}
+            //else
+            //{
+            //    Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Added " + Quantity + " " + Item.Name + " to the list!", ColorType.Teamcraft));
+            //}
+        }
+        public static void RemoveItem(uint? ItemID)
+        {
+            File.WriteAllLines(CraftingListLocation, File.ReadLines(CraftingListLocation).Where(x => !x.StartsWith(ItemID + ",")).ToList());
+            ExcelSheet<Item> ItemSheet = DataManager.GetExcelSheet<Item>()!;
+            var Item = ItemSheet.GetRow((uint)ItemID);
+            Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Removed " + Item.Name + " from the list!", ColorType.Teamcraft));
         }
 
         #region IDisposable Support
@@ -91,9 +281,11 @@ namespace TeamcraftListMaker
             PluginInterface.UiBuilder.Draw -= ui.Draw;
             PluginInterface.UiBuilder.OpenConfigUi -= () =>
             {
-                PluginUI ui = this.ui;
+                PluginUI ui = Plugin.ui;
                 ui.IsVisible = !ui.IsVisible;
             };
+
+            ContextMenu.OnMenuOpened -= OnContextMenuOpened;
         }
 
         public void Dispose()

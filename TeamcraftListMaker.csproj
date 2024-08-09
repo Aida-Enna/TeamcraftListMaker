@@ -19,6 +19,7 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+	  <OutputPath>..\Build\TeamcraftListMaker\</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup>

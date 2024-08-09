@@ -15,26 +15,6 @@ namespace Veda
         public const ushort Success = 45;
         public const ushort Warn = 31;
         public const ushort Info = 37;
-        public const ushort Twitch = 541;
-    }
-
-    public class PlayerData
-    {
-        public string Name
-        {
-            get => $"{this.Firstname} {this.Lastname}";
-            set
-            {
-                var name = value.Split(' ');
-                this.Firstname = name[0];
-                this.Lastname = name[1];
-            }
-        }
-
-        public string Firstname { get; set; }
-        public string Lastname { get; set; }
-        public string HomeworldName { get; set; }
-        public string Time { get; set; }
-        public int HomeworldId { get; set; }
+        public const ushort Teamcraft = 514;
     }
 }
