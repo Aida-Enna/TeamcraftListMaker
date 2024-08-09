@@ -1,19 +1,6 @@
-﻿using Dalamud.Game.ClientState.Party;
-using Dalamud.Game.Command;
-using Dalamud.Game.Gui;
-using Dalamud.Game;
-using Dalamud.Plugin;
-using ImGuiNET;
-using ImGuiScene;
-using System;
-using System.Diagnostics;
-using System.Net;
+﻿using ImGuiNET;
 using System.Numerics;
-using TwitchLib.Api.Helix;
-using TwitchLib.Client.Models;
 using Veda;
-using Dalamud.Configuration;
-using Dalamud.Interface.Utility;
 
 namespace TeamcraftListMaker
 {
@@ -26,27 +13,44 @@ namespace TeamcraftListMaker
         public int SelectAmountY = 0;
         public int AmountToAdd;
         public uint? SelectItemID;
+
         public void Draw()
         {
-            if (!IsVisible || !ImGui.Begin("", ref IsVisible, ImGuiWindowFlags.NoDecoration)) { return; }
-            ImGui.SetWindowPos(new Vector2(SelectAmountX+50, SelectAmountY+50));
+            if (!IsVisible || !ImGui.Begin("", ref IsVisible, ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.AlwaysAutoResize)) { return; }
+            ImGui.SetWindowPos(new Vector2(SelectAmountX + 50, SelectAmountY + 50));
             ImGui.SetWindowFocus();
             ImGui.Text("Amount to add:");
             ImGui.SetNextItemWidth(100);
             if (ImGui.IsWindowAppearing()) { ImGui.SetKeyboardFocusHere(); }
-            if (ImGui.InputInt("###Inputshit", ref AmountToAdd,0,0,ImGuiInputTextFlags.EnterReturnsTrue))
+            if (ImGui.InputInt("###Inputshit", ref AmountToAdd, 0, 0, ImGuiInputTextFlags.EnterReturnsTrue))
             {
-                Plugin.AddItem(SelectItemID, AmountToAdd);
-                this.IsVisible = false;
+                if (AmountToAdd > 0)
+                {
+                    Plugin.AddItem(SelectItemID, AmountToAdd);
+                    this.IsVisible = false;
+                }
+                else
+                {
+                    Plugin.Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Please select a number greater than 0.", ColorType.Error));
+                }
             }
-            ImGui.Checkbox("Don't reset", ref Plugin.PluginConfig.DoNotResetAmount);
-            if (ImGui.Button("OK"))
-            {
-                Plugin.AddItem(SelectItemID, AmountToAdd);
-                this.IsVisible = false;
-            }
-            ImGui.SameLine();
-            if (ImGui.Button("Cancel"))
+            //Not currently working cause ImGui sucks ass and won't return true on the above InputInt if the number isn't changed
+            //ImGui.Checkbox("Don't reset", ref Plugin.PluginConfig.DoNotResetAmount);
+            //if (ImGui.Button("OK"))
+            //{
+            //    if (AmountToAdd > 0)
+            //    {
+            //        Plugin.AddItem(SelectItemID, AmountToAdd);
+            //        this.IsVisible = false;
+            //    }
+            //    else
+            //    {
+            //        Plugin.Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Please select a number greater than 0.", ColorType.Error));
+            //    }
+            //}
+            //ImGui.SameLine();
+            //ImGui.SetNextItemWidth(100);
+            if (ImGui.Button("Cancel",new Vector2(100,20)))
             {
                 this.IsVisible = false;
             }

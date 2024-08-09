@@ -82,19 +82,21 @@ namespace TeamcraftListMaker
         {
             try
             {
-                uint? itemId;
-                itemId = CMSShit.GetGameObjectItemId(args);
-                itemId %= 500000;
+                uint? ItemID;
+                ItemID = CMSShit.GetGameObjectItemId(args);
+                ItemID %= 500000;
+                ExcelSheet<RecipeLookup> Recipe = DataManager.GetExcelSheet<RecipeLookup>()!;
+                //Chat.Print(Recipe.GetRow((uint)ItemID).RowId.ToString());
                 //Chat.Print($"{itemId}");
 
-                if (itemId != null)
+                if (ItemID != null && IsCraftable((uint)ItemID))
                 {
                     var menuItem = new MenuItem();
                     menuItem.Name = "Teamcraft";
                     menuItem.Prefix = SeIconChar.HighQuality;
                     menuItem.PrefixColor = 31;
                     menuItem.IsSubmenu = true;
-                    menuItem.OnClicked += clickedArgs => PopulateCraftingListOptions(clickedArgs, itemId);
+                    menuItem.OnClicked += clickedArgs => PopulateCraftingListOptions(clickedArgs, ItemID);
                     args.AddMenuItem(menuItem);
                 }
             }
@@ -208,11 +210,10 @@ namespace TeamcraftListMaker
                 ui.SelectItemID = itemId;
                 var ContextMenuPtr = GameGui.GetAddonByName("ContextMenu", 1);
                 var addonContextMenu = (AddonContextMenu*)ContextMenuPtr;
-                if (!Plugin.PluginConfig.DoNotResetAmount) { ui.AmountToAdd = 1; }
+                //if (!Plugin.PluginConfig.DoNotResetAmount) { ui.AmountToAdd = 1; }
+                ui.AmountToAdd = 1;
                 ui.SelectAmountX = addonContextMenu->X;
                 ui.SelectAmountY = addonContextMenu->Y;
-                //Chat.Print(ui.SelectAmountX.ToString());
-                //Chat.Print(ui.SelectAmountY.ToString());
                 ui.IsVisible = true;
             }
             catch (Exception ex)
@@ -248,9 +249,8 @@ namespace TeamcraftListMaker
         public static void AddItem(uint? ItemID, int Quantity)
         {
             File.AppendAllText(CraftingListLocation, ItemID + ",null," + Quantity + ";" + Environment.NewLine);
-            ExcelSheet<Item> ItemSheet = DataManager.GetExcelSheet<Item>()!;
-            var Item = ItemSheet.GetRow((uint)ItemID);
-            Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Added " + Quantity + " " + Item.Name + " to the list!", ColorType.Teamcraft));
+            Item RetrievedItem = GetItemInfo((uint)ItemID);
+            Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Added " + Quantity + " " + RetrievedItem.Name + " to the list!", ColorType.Teamcraft));
             //if (Quantity > 1)
             //{
             //    Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Added " + Quantity + " " + Item.Name + "s to the list!", ColorType.Teamcraft));
@@ -263,9 +263,28 @@ namespace TeamcraftListMaker
         public static void RemoveItem(uint? ItemID)
         {
             File.WriteAllLines(CraftingListLocation, File.ReadLines(CraftingListLocation).Where(x => !x.StartsWith(ItemID + ",")).ToList());
+            Item RetrievedItem = GetItemInfo((uint)ItemID);
+            Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Removed " + RetrievedItem.Name + " from the list!", ColorType.Teamcraft));
+        }
+
+        public static Item GetItemInfo(uint ItemID)
+        {
             ExcelSheet<Item> ItemSheet = DataManager.GetExcelSheet<Item>()!;
-            var Item = ItemSheet.GetRow((uint)ItemID);
-            Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Removed " + Item.Name + " from the list!", ColorType.Teamcraft));
+            return ItemSheet.GetRow((uint)ItemID);
+        }
+
+        public static bool IsCraftable(uint ItemID)
+        {
+            ExcelSheet<RecipeLookup> Recipe = DataManager.GetExcelSheet<RecipeLookup>()!;
+            var RandomShit = Recipe.GetRow(ItemID);
+            if (RandomShit != null)
+            {
+                return true;
+            }   
+            else
+            {
+                return false;
+            }
         }
 
         #region IDisposable Support
