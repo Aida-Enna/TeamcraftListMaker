@@ -2,13 +2,15 @@
   "Author": "Aida Enna",
   "Name": "Teamcraft List Maker",
   "InternalName": "TeamcraftListMaker",
-  "AssemblyVersion": "1.0.0.0",
+  "AssemblyVersion": "1.0.0.2",
   "ApplicableVersion": "any",
   "Punchline": "Adds a new menu when right clicking items that lets you easily add/remove items to a list and then export it to Teamcraft",
   "Description": "No more alt tabbing, no more writing down names of items, just add and export!\n\nThis plugin is not created by Teamcraft staff and they are not responsible for it. To report issues or request new features, please click the globe icon and submit them using the issues tab.\n\n(Logo used with permission from Teamcraft owner)",
   "RepoUrl": "hhttps://github.com/Aida-Enna/TeamcraftListMaker",
   "Tags": [
-    "empty",
+    "teamcraft",
+    "craft",
+    "list",
     "aida"
   ],
   "CategoryTags": null,

@@ -64,11 +64,11 @@ namespace TeamcraftListMaker
 
             ui = new PluginUI();
             PluginInterface.UiBuilder.Draw += new System.Action(ui.Draw);
-            PluginInterface.UiBuilder.OpenConfigUi += () =>
-            {
-                PluginUI ui = Plugin.ui;
-                ui.IsVisible = !ui.IsVisible;
-            };
+            //PluginInterface.UiBuilder.OpenConfigUi += () =>
+            //{
+            //    PluginUI ui = Plugin.ui;
+            //    ui.IsVisible = !ui.IsVisible;
+            //};
 
             ContextMenu.OnMenuOpened += OnContextMenuOpened;
 
