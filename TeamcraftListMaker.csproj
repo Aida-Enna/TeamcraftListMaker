@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Authors>Aida Enna</Authors>
     <Company></Company>
-    <Version>1.0.0.3</Version>
+    <Version>1.0.0.4</Version>
     <Description></Description>
     <Copyright></Copyright>
     <PackageProjectUrl>https://github.com/Aida-Enna/TeamcraftListMaker</PackageProjectUrl>
@@ -27,7 +27,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="2.1.13" />
+    <PackageReference Include="DalamudPackager" Version="11.0.0" />
     <PackageReference Include="TwitchLib" Version="3.5.3" />
     <Reference Include="FFXIVClientStructs">
       <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>

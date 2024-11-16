@@ -13,7 +13,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using ImGuiNET;
 using Lumina.Data.Parsing.Scd;
 using Lumina.Excel;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -85,7 +85,7 @@ namespace TeamcraftListMaker
                 uint? ItemID;
                 ItemID = CMSShit.GetGameObjectItemId(args);
                 ItemID %= 500000;
-                ExcelSheet<RecipeLookup> Recipe = DataManager.GetExcelSheet<RecipeLookup>()!;
+                //ExcelSheet<RecipeLookup> Recipe = DataManager.GetExcelSheet<RecipeLookup>()!;
                 //Chat.Print(Recipe.GetRow((uint)ItemID).RowId.ToString());
                 //Chat.Print($"{itemId}");
 
@@ -250,7 +250,7 @@ namespace TeamcraftListMaker
         {
             File.AppendAllText(CraftingListLocation, ItemID + ",null," + Quantity + ";" + Environment.NewLine);
             Item RetrievedItem = GetItemInfo((uint)ItemID);
-            Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Added " + Quantity + " " + RetrievedItem.Name + " to the list!", ColorType.Teamcraft));
+            Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Added " + Quantity + " " + RetrievedItem.Name.ToString() + " to the list!", ColorType.Teamcraft));
             //if (Quantity > 1)
             //{
             //    Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Added " + Quantity + " " + Item.Name + "s to the list!", ColorType.Teamcraft));
@@ -264,7 +264,7 @@ namespace TeamcraftListMaker
         {
             File.WriteAllLines(CraftingListLocation, File.ReadLines(CraftingListLocation).Where(x => !x.StartsWith(ItemID + ",")).ToList());
             Item RetrievedItem = GetItemInfo((uint)ItemID);
-            Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Removed " + RetrievedItem.Name + " from the list!", ColorType.Teamcraft));
+            Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "Removed " + RetrievedItem.Name.ToString() + " from the list!", ColorType.Teamcraft));
         }
 
         public static Item GetItemInfo(uint ItemID)
@@ -276,8 +276,8 @@ namespace TeamcraftListMaker
         public static bool IsCraftable(uint ItemID)
         {
             ExcelSheet<RecipeLookup> Recipe = DataManager.GetExcelSheet<RecipeLookup>()!;
-            var RandomShit = Recipe.GetRow(ItemID);
-            if (RandomShit != null)
+            Recipe.TryGetRow(ItemID, out RecipeLookup RandomShit);
+            if (RandomShit.RowId != 0)
             {
                 return true;
             }   
