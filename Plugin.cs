@@ -10,7 +10,6 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using ImGuiNET;
 using Lumina.Data.Parsing.Scd;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
@@ -46,7 +45,8 @@ namespace TeamcraftListMaker
 
         public static Configuration PluginConfig { get; set; }
         private PluginCommandManager<Plugin> CommandManager;
-        public static PluginUI ui;
+        public static SelectAmountUI SelectAmount_UI;
+        public static ConfigUI Config_UI;
 
         private ContextMenuService CMSShit = new ContextMenuService();
         public static string CraftingListLocation;
@@ -62,13 +62,16 @@ namespace TeamcraftListMaker
             PluginConfig = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             PluginConfig.Initialize(PluginInterface);
 
-            ui = new PluginUI();
-            PluginInterface.UiBuilder.Draw += new System.Action(ui.Draw);
-            //PluginInterface.UiBuilder.OpenConfigUi += () =>
-            //{
-            //    PluginUI ui = Plugin.ui;
-            //    ui.IsVisible = !ui.IsVisible;
-            //};
+            SelectAmount_UI = new SelectAmountUI();
+            Config_UI = new ConfigUI();
+            PluginInterface.UiBuilder.Draw += new System.Action(SelectAmount_UI.Draw);
+            PluginInterface.UiBuilder.Draw += new System.Action(Config_UI.Draw);
+
+            PluginInterface.UiBuilder.OpenConfigUi += () =>
+            {
+                ConfigUI Config_UI = Plugin.Config_UI;
+                Config_UI.IsVisible = !Config_UI.IsVisible;
+            };
 
             ContextMenu.OnMenuOpened += OnContextMenuOpened;
 
@@ -207,18 +210,18 @@ namespace TeamcraftListMaker
         {
             try
             {
-                ui.SelectItemID = itemId;
+                SelectAmount_UI.SelectItemID = itemId;
                 var ContextMenuPtr = GameGui.GetAddonByName("ContextMenu", 1);
-                var addonContextMenu = (AddonContextMenu*)ContextMenuPtr;
+                var addonContextMenu = (AddonContextMenu*)ContextMenuPtr.Address;
                 //if (!Plugin.PluginConfig.DoNotResetAmount) { ui.AmountToAdd = 1; }
-                ui.AmountToAdd = 1;
-                ui.SelectAmountX = addonContextMenu->X;
-                ui.SelectAmountY = addonContextMenu->Y;
-                ui.IsVisible = true;
+                SelectAmount_UI.AmountToAdd = 1;
+                SelectAmount_UI.SelectAmountX = addonContextMenu->X;
+                SelectAmount_UI.SelectAmountY = addonContextMenu->Y;
+                SelectAmount_UI.IsVisible = true;
             }
             catch (Exception ex)
             {
-                Chat.Print("An error has occured - " + ex.ToString());
+                Chat.Print("An error has occurred - " + ex.ToString());
             }
         }
 
@@ -237,7 +240,10 @@ namespace TeamcraftListMaker
             //Chat.Print("String before encoding: \"" + StringBeforeEncode + "\"");
             string WebsiteURL = "https://ffxivteamcraft.com/import/" + System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(StringBeforeEncode));
             Functions.OpenWebsite(WebsiteURL);
-            Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "List exported to " + WebsiteURL, ColorType.Teamcraft));
+            if (!Config_UI.DontPostExportLink)
+            {
+                Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "List exported to " + WebsiteURL, ColorType.Teamcraft));
+            }
         }
 
         public static void ClearItemList()
@@ -297,11 +303,12 @@ namespace TeamcraftListMaker
 
             PluginInterface.SavePluginConfig(PluginConfig);
 
-            PluginInterface.UiBuilder.Draw -= ui.Draw;
+            PluginInterface.UiBuilder.Draw -= SelectAmount_UI.Draw;
+            PluginInterface.UiBuilder.Draw -= Config_UI.Draw;
             PluginInterface.UiBuilder.OpenConfigUi -= () =>
             {
-                PluginUI ui = Plugin.ui;
-                ui.IsVisible = !ui.IsVisible;
+                ConfigUI Config_UI = Plugin.Config_UI;
+                Config_UI.IsVisible = !Config_UI.IsVisible;
             };
 
             ContextMenu.OnMenuOpened -= OnContextMenuOpened;

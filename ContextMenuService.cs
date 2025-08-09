@@ -135,7 +135,7 @@ public class ContextMenuService
 
     private unsafe IntPtr AgentById(AgentId id)
     {
-        var uiModule = (UIModule*)_gameGui.GetUIModule();
+        var uiModule = (UIModule*)_gameGui.GetUIModule().Address;
         var agents = uiModule->GetAgentModule();
         var agent = agents->GetAgentByInternalId(id);
         return (IntPtr)agent;
