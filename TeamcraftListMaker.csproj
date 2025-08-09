@@ -8,6 +8,6 @@
         <Content Include="TeamcraftListMaker.json" />
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Update="DalamudPackager" Version="12.0.0" />
+      <PackageReference Update="DalamudPackager" Version="13.0.0" />
     </ItemGroup>
 </Project>
