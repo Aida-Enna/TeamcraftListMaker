@@ -2,6 +2,7 @@
 using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -28,8 +29,6 @@ namespace TeamcraftListMaker
 {
     public class Plugin : IDalamudPlugin
     {
-        public string Name => "Teamcraft List Maker";
-
         [PluginService] public static IDalamudPluginInterface PluginInterface { get; set; }
         [PluginService] public static ICommandManager Commands { get; set; }
         [PluginService] public static ICondition Conditions { get; set; }
@@ -45,8 +44,9 @@ namespace TeamcraftListMaker
 
         public static Configuration PluginConfig { get; set; }
         private PluginCommandManager<Plugin> CommandManager;
+        public readonly WindowSystem WindowSystem = new("Teamcraft List Maker");
+        public ConfigWindow ConfigWindow { get; init; }
         public static SelectAmountUI SelectAmount_UI;
-        public static ConfigUI Config_UI;
 
         private ContextMenuService CMSShit = new ContextMenuService();
         public static string CraftingListLocation;
@@ -62,16 +62,14 @@ namespace TeamcraftListMaker
             PluginConfig = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             PluginConfig.Initialize(PluginInterface);
 
+            ConfigWindow = new ConfigWindow(this);
             SelectAmount_UI = new SelectAmountUI();
-            Config_UI = new ConfigUI();
-            PluginInterface.UiBuilder.Draw += new System.Action(SelectAmount_UI.Draw);
-            PluginInterface.UiBuilder.Draw += new System.Action(Config_UI.Draw);
 
-            PluginInterface.UiBuilder.OpenConfigUi += () =>
-            {
-                ConfigUI Config_UI = Plugin.Config_UI;
-                Config_UI.IsVisible = !Config_UI.IsVisible;
-            };
+            WindowSystem.AddWindow(ConfigWindow);
+
+            PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
+            PluginInterface.UiBuilder.Draw += new System.Action(SelectAmount_UI.Draw);
+            PluginInterface.UiBuilder.OpenConfigUi += ConfigWindow.Toggle;
 
             ContextMenu.OnMenuOpened += OnContextMenuOpened;
 
@@ -240,7 +238,7 @@ namespace TeamcraftListMaker
             //Chat.Print("String before encoding: \"" + StringBeforeEncode + "\"");
             string WebsiteURL = "https://ffxivteamcraft.com/import/" + System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(StringBeforeEncode));
             Functions.OpenWebsite(WebsiteURL);
-            if (!Config_UI.DontPostExportLink)
+            if (!Plugin.PluginConfig.DontPostExportLink)
             {
                 Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "List exported to " + WebsiteURL, ColorType.Teamcraft));
             }
@@ -303,13 +301,8 @@ namespace TeamcraftListMaker
 
             PluginInterface.SavePluginConfig(PluginConfig);
 
-            PluginInterface.UiBuilder.Draw -= SelectAmount_UI.Draw;
-            PluginInterface.UiBuilder.Draw -= Config_UI.Draw;
-            PluginInterface.UiBuilder.OpenConfigUi -= () =>
-            {
-                ConfigUI Config_UI = Plugin.Config_UI;
-                Config_UI.IsVisible = !Config_UI.IsVisible;
-            };
+            PluginInterface.UiBuilder.Draw -= WindowSystem.Draw;
+            PluginInterface.UiBuilder.OpenConfigUi -= ConfigWindow.Toggle;
 
             ContextMenu.OnMenuOpened -= OnContextMenuOpened;
         }

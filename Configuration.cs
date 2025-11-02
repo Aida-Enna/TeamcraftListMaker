@@ -8,7 +8,7 @@ namespace TeamcraftListMaker
     public class Configuration : IPluginConfiguration
     {
         public int Version { get; set; }
-        public bool DoNotResetAmount;
+        public bool DontPostExportLink = false;
 
         private IDalamudPluginInterface pluginInterface;
 

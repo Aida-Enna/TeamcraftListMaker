@@ -1,4 +1,6 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Windowing;
+using System;
 using System.Net;
 using System.Numerics;
 using Veda;
@@ -22,7 +24,7 @@ namespace TeamcraftListMaker
             ImGui.Text("Amount to add:");
             ImGui.SetNextItemWidth(100);
             if (ImGui.IsWindowAppearing()) { ImGui.SetKeyboardFocusHere(); }
-            if (ImGui.InputInt("###Inputshit", ref AmountToAdd, 0, 0, flags:ImGuiInputTextFlags.EnterReturnsTrue))
+            if (ImGui.InputInt("###Inputshit", ref AmountToAdd, 0, 0, flags: ImGuiInputTextFlags.EnterReturnsTrue))
             {
                 if (AmountToAdd > 0)
                 {
@@ -50,7 +52,7 @@ namespace TeamcraftListMaker
             //}
             //ImGui.SameLine();
             //ImGui.SetNextItemWidth(100);
-            if (ImGui.Button("Cancel",new Vector2(100,20)))
+            if (ImGui.Button("Cancel", new Vector2(100, 20)))
             {
                 this.IsVisible = false;
             }
@@ -58,23 +60,27 @@ namespace TeamcraftListMaker
         }
     }
 
-    public class ConfigUI
+    public class ConfigWindow : Window, IDisposable
     {
-        public bool IsVisible;
-        public bool ShowSupport;
-        public bool DontPostExportLink = false;
-
-        public void Draw()
+        public ConfigWindow(Plugin plugin) : base("Teamcraft List Maker Config###TCLM_Config")
         {
-            if (!IsVisible || !ImGui.Begin("Teamcraft List Maker Config", ref IsVisible, ImGuiWindowFlags.AlwaysAutoResize))
-                return;
+            Flags = ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
+                    ImGuiWindowFlags.NoScrollWithMouse;
+        }
+
+        public void Dispose() { }
+
+        public bool ShowSupport;
+
+        public override void Draw()
+        {
             if (ImGui.Button("Save"))
             {
                 Plugin.PluginConfig.Save();
-                this.IsVisible = false;
+                this.Toggle();
             }
             ImGui.SameLine();
-            ImGui.Checkbox("Don't post exported link in chat", ref DontPostExportLink);
+            ImGui.Checkbox("Don't post exported link in chat", ref Plugin.PluginConfig.DontPostExportLink);
             //ImGui.Spacing();
             //ImGui.Indent(-275);
             if (ImGui.Button("Want to help support my work?"))
@@ -106,7 +112,6 @@ namespace TeamcraftListMaker
                 }
                 ImGui.PopStyleColor();
             }
-            ImGui.End();
         }
     }
 }
