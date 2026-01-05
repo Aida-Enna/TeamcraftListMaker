@@ -13,28 +13,28 @@ namespace TeamcraftListMaker;
 
 public class ContextMenuService
 {
-    //Code copied from https://github.com/Critical-Impact/InventoryTools/blob/8b52fd6eec34bfae78388caea84b2170da838bee/InventoryTools/Services/ContextMenuService.cs#L110
+    //Code copied from https://github.com/Critical-Impact/InventoryTools/blob/main/InventoryTools/Services/ContextMenuService.cs
     //Thank you!
     private readonly IGameGui _gameGui = Plugin.GameGui;
-    public const int SatisfactionSupplyItemIdx = 0x54;
-    public const int SatisfactionSupplyItem1Id = 0x80 + 1 * 0x3C;
-    public const int SatisfactionSupplyItem2Id = 0x80 + 2 * 0x3C;
-    public const int ContentsInfoDetailContextItemId = 0x17CC;
-    public const int RecipeNoteContextItemId = 0x398;
-    public const int AgentItemContextItemId = 0x28;
-    public const int GatheringNoteContextItemId = 0xA0;
-    public const int ItemSearchContextItemId = 0x17D0;
-    public const int ItemSearchContextItemId2 = 0x3384;
-    public const int ChatLogContextMenuType = ChatLogContextItemId + 0x8;
-    public const int ChatLogContextItemId = 0x950;
+    public const int SatisfactionSupplyItemIdx = 84;
+    public const int SatisfactionSupplyItem1Id = 128 + 1 * 60;
+    public const int SatisfactionSupplyItem2Id = 128 + 2 * 60;
+    public const int ContentsInfoDetailContextItemId = 6092;
+    public const int RecipeNoteContextItemId = 920;
+    public const int AgentItemContextItemId = 40;
+    public const int GatheringNoteContextItemId = 160;
+    public const int ItemSearchContextItemId = 6192;
+    public const int ChatLogContextMenuType = ChatLogContextItemId + 8;
+    public const int ChatLogContextItemId = 2392;
+    public const int AgentMiragePrismPrismItemDetailId = 84;
 
-    public const int SubmarinePartsMenuContextItemId = 0x54;
-    public const int ShopExchangeItemContextItemId = 0x54;
-    public const int ShopContextMenuItemId = 0x54;
-    public const int ShopExchangeCurrencyContextItemId = 0x54;
-    public const int HWDSupplyContextItemId = 0x38C;
-    public const int GrandCompanySupplyListContextItemId = 0x54;
-    public const int GrandCompanyExchangeContextItemId = 0x54;
+    public const int SubmarinePartsMenuContextItemId = 84;
+    public const int ShopExchangeItemContextItemId = 84;
+    public const int ShopContextMenuItemId = 84;
+    public const int ShopExchangeCurrencyContextItemId = 84;
+    public const int HWDSupplyContextItemId = 1068;
+    public const int GrandCompanySupplyListContextItemId = 84;
+    public const int GrandCompanyExchangeContextItemId = 84;
 
     public uint? GetGameObjectItemId(IMenuOpenedArgs args)
     {
@@ -119,7 +119,7 @@ public class ContextMenuService
 
         if (GetObjectItemId(args.AgentPtr, ItemSearchContextItemId) == 0)
         {
-            return GetObjectItemId(AgentById(AgentId.ItemSearch), ItemSearchContextItemId2);
+            return GetObjectItemId(AgentById(AgentId.ItemSearch), ItemSearchContextItemId);
         }
         else
         {
