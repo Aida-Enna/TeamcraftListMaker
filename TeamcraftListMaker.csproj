@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Dalamud.NET.Sdk/14.0.1">
     <PropertyGroup>
 	    <TargetFramework>net10.0</TargetFramework>
-        <Version>1.0.0.9</Version>
+        <Version>1.0.1.0</Version>
 	    <OutputPath>..\Build\TeamcraftListMaker\</OutputPath>
     </PropertyGroup>
     <ItemGroup>
         <Content Include="TeamcraftListMaker.json" />
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Update="DalamudPackager" Version="14.0.1" />
+      <PackageReference Update="DalamudPackager" Version="15.0.0" />
     </ItemGroup>
 </Project>
