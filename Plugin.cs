@@ -20,6 +20,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Xml;
 using Veda;
 using static FFXIVClientStructs.FFXIV.Common.Component.BGCollision.MeshPCB;
@@ -225,22 +226,64 @@ namespace TeamcraftListMaker
 
         public static void ExportItemList()
         {
-            string StringBeforeEncode = "";
+            //string StringBeforeEncode = "";
+            //using (StreamReader sr = File.OpenText(CraftingListLocation))
+            //{
+            //    string s = String.Empty;
+            //    while ((s = sr.ReadLine()) != null)
+            //    {
+            //        if (!String.IsNullOrWhiteSpace(s)) { StringBeforeEncode += s; }
+            //    }
+            //}
+            //StringBeforeEncode = StringBeforeEncode.Remove(StringBeforeEncode.Length - 1, 1).Trim();
+            ////Chat.Print("String before encoding: \"" + StringBeforeEncode + "\"");
+            //string WebsiteURL = "https://ffxivteamcraft.com/import/" + System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(StringBeforeEncode));
+
+            List<string> ImportURLs = new List<string>();
+
+            List<string> CraftingListLines = new List<string>();
+
             using (StreamReader sr = File.OpenText(CraftingListLocation))
             {
-                string s = String.Empty;
+                string s;
+
                 while ((s = sr.ReadLine()) != null)
                 {
-                    if (!String.IsNullOrWhiteSpace(s)) { StringBeforeEncode += s; }
+                    if (!string.IsNullOrWhiteSpace(s))
+                    {
+                        CraftingListLines.Add(s.Trim());
+                    }
                 }
             }
-            StringBeforeEncode = StringBeforeEncode.Remove(StringBeforeEncode.Length - 1, 1).Trim();
-            //Chat.Print("String before encoding: \"" + StringBeforeEncode + "\"");
-            string WebsiteURL = "https://ffxivteamcraft.com/import/" + System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(StringBeforeEncode));
-            Functions.OpenWebsite(WebsiteURL);
+
+            // Split into groups of 100 (the max is 225 but performance drops when you approach that)
+            for (int i = 0; i < CraftingListLines.Count; i += 100)
+            {
+                List<string> chunk = CraftingListLines
+                    .Skip(i)
+                    .Take(100)
+                    .ToList();
+
+                string StringBeforeEncode = string.Join("", chunk);
+
+                StringBeforeEncode = StringBeforeEncode.Remove(StringBeforeEncode.Length - 1, 1).Trim();
+
+                ImportURLs.Add("https://ffxivteamcraft.com/import/" + Convert.ToBase64String(Encoding.UTF8.GetBytes(StringBeforeEncode)));
+            }
+            foreach (string ImportURL in ImportURLs)
+            {
+                Functions.OpenWebsite(ImportURL);
+            }
             if (!Plugin.PluginConfig.DontPostExportLink)
             {
-                Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "List exported to " + WebsiteURL, ColorType.Teamcraft));
+                if (ImportURLs.Count == 0)
+                {
+                    Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "List exported and opened in your default browser.", ColorType.Teamcraft));
+                }
+                else
+                {
+                    Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "List exported and opened in your default browser (in " + ImportURLs.Count() + " parts because it exceeded 100 items).", ColorType.Teamcraft));
+                }
             }
         }
 
