@@ -276,13 +276,13 @@ namespace TeamcraftListMaker
             }
             if (!Plugin.PluginConfig.DontPostExportLink)
             {
-                if (ImportURLs.Count == 0)
+                if (ImportURLs.Count > 1)
                 {
-                    Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "List exported and opened in your default browser.", ColorType.Teamcraft));
+                    Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "List exported and opened in your default browser (in " + ImportURLs.Count() + " parts because it exceeded 100 items).", ColorType.Teamcraft));
                 }
                 else
                 {
-                    Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "List exported and opened in your default browser (in " + ImportURLs.Count() + " parts because it exceeded 100 items).", ColorType.Teamcraft));
+                    Chat.Print(Functions.BuildSeString("Teamcraft List Maker", "List exported and opened in your default browser.", ColorType.Teamcraft));
                 }
             }
         }
